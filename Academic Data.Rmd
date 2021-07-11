@@ -1,0 +1,367 @@
+---
+title: "MEM Academic Data, Will Rains, Babak Barghi, Alexander Rutten"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+
+---
+
+```{r, message=FALSE}
+library(ggplot2)
+library(flexdashboard)
+library(tidyverse)
+library(RColorBrewer)
+library(scales)
+theme_set(theme_minimal())
+students <- read.csv("Students.csv",header = TRUE,sep = ";")
+grades <- read.csv("Grades.csv",header = TRUE,sep = ";")
+courses <- read.table("Courses.csv", sep = ";", dec=".", header = TRUE)
+courses <- tibble(courses)
+courses <- courses %>%
+  mutate(Course_ID = gsub(" ", "", Course_ID))
+admissions <- read_csv2("Admissions.csv")
+grades <- grades %>% filter(!is.na(Grade))
+
+colnames(grades) <- c("Student_ID","Course_ID","Grade","Year")
+```
+Admissions
+=====================================  
+
+Column {data-height=500}
+-----------------------------------------------------------------------
+
+### AdmissionsByYear
+
+```{r}
+admissions %>% pivot_longer(-Enrolment, names_to = "Condition", 
+                          values_to = "count") %>%
+ggplot(aes(x=Enrolment, y= count, fill = Condition)) + 
+    geom_bar(position="dodge", stat="identity") +
+  labs(title="Enrollment Condition",
+        x="Year", y= "Number of Students") +
+  geom_text(aes(label = count), 
+            position = position_dodge(0.9),
+            color="black",vjust = 1.1,hjust = 0.5) + 
+  scale_fill_brewer(palette="Reds") + 
+  coord_flip() +
+  labs(x="")
+```
+
+
+Courses
+=====================================  
+Row {data-height=100}
+-----------------------------------------------------------------------
+
+### Total Number of Courses
+
+```{r}
+CourseCount <- courses %>%
+  summarise(TotalCourses = n())
+
+  valueBox(value = CourseCount, icon = "fa-pencil", color = "red")
+```
+
+### Number of Mandatory Courses
+
+```{r}
+MCourseCount <- courses %>%
+  filter(Type == "Mandatory") %>%
+  summarise(n())
+
+  valueBox(value = MCourseCount, icon = "fa-pencil", color = "red")
+```
+
+### Number of Elective Courses
+
+```{r}
+ECourseCount <- courses %>%
+  filter(Type == "Elective") %>%
+  summarise(n())
+
+  valueBox(value = ECourseCount, icon = "fa-pencil", color = "red")
+```
+
+Row {data-height=500}
+-------------------------------------
+### Average Grade by Course 
+
+```{r}
+left_join(grades, courses %>% select(Course_ID, Course)) %>%
+  group_by(Course) %>% 
+  summarize(N = n(), Avg_Grade = mean(Grade)) %>%
+  ggplot(aes(x= reorder(Course, -Avg_Grade), y= Avg_Grade, fill = as.factor(Course)), show.legend = FALSE) + 
+  labs(title="Average Grade in each Course",
+        x="", y= "Grades (Average)") +
+  geom_bar(stat = "Identity") + 
+  coord_flip() + 
+  scale_fill_brewer(palette="Reds") +
+  theme(legend.position = "none") 
+```
+
+
+### Number of Students by Course 
+
+```{r}
+left_join(grades, courses) %>%
+  mutate(passed = ifelse(Grade >= 5,1,0)) %>%
+  group_by(Course,Year) %>%
+  summarise(students = n(),passed = sum(passed)) %>%
+  mutate(frac_passed = passed/students) %>%
+  ggplot(aes(y = students,x = Year, fill = Course)) +
+  geom_bar(position="dodge", stat="identity", height = 1) +
+  coord_flip() +
+  scale_fill_brewer(palette="Reds") + 
+  labs(x="") 
+  
+
+  
+
+
+```
+
+### Fraction of Students who passed by Course 
+
+```{r}
+left_join(grades, courses) %>%
+  mutate(passed = ifelse(Grade >= 5,1,0)) %>%
+  group_by(Course,Year) %>%
+  summarise(students = n(),passed = sum(passed)) %>%
+  mutate(frac_passed = passed/students) %>%
+  ggplot(aes(y = frac_passed,x = Year, fill = Course)) +
+  geom_bar(position="dodge", stat="identity", height = 1) +
+  coord_flip() +
+  scale_fill_brewer(palette="Reds") +
+  labs(x="") 
+  
+  
+
+  
+
+
+```
+
+Grades
+=====================================  
+
+Row {data-height=100}
+-----------------------------------------------------------------------
+
+### Number of Passing Marks
+
+```{r}
+CountPassingMarks <- grades %>%
+  filter(Grade >= 5) %>%
+  summarise(n())
+
+  valueBox(value = CountPassingMarks, color = "red")
+```
+
+### Number of Failing Marks
+
+```{r}
+CountFailingMarks <- grades %>%
+  filter(Grade < 5) %>%
+  summarise(n())
+
+  valueBox(value = CountFailingMarks, color = "red")
+```
+
+### % Passing Marks
+
+```{r}
+PercPassing <- round(CountPassingMarks/(CountPassingMarks + CountFailingMarks) * 100,0)
+
+  valueBox(value = PercPassing, color = "red")
+```
+
+Row {data-height=300}
+-----------------------------------------------------------------------
+
+### Average Grade in each Course
+
+```{r}
+left_join(grades, courses %>% select(Course_ID, Course)) %>%
+  group_by(Course) %>% 
+  summarize(N = n(), Avg_Grade = mean(Grade)) %>%
+  ggplot(aes(x= reorder(Course, -Avg_Grade), y= Avg_Grade, fill = as.factor(Course))) + 
+  labs(x="Course", y= "Grades (Average)") +
+  geom_bar(stat = "Identity") + 
+  coord_flip() + 
+  scale_fill_brewer(palette="Reds") +
+  theme(legend.position = "none") +
+  labs(x = "")
+```
+
+
+### Average Grade per Year 
+
+
+```{r}
+grades %>% group_by(Year) %>% 
+  summarize(N = n(), Avg_Grade = mean(Grade)) %>%
+ggplot(aes(x=Year, y= Avg_Grade, fill = as.factor(Year))) + 
+    geom_bar(position="dodge", stat="identity") +
+  labs(x="Year", y= "Average Grade") + 
+  scale_y_continuous(n.breaks = 8) +
+  scale_fill_brewer(palette="Reds") +
+  theme(legend.position = "none") +
+  labs(x = "")
+```
+
+Row {data-height=300}
+-----------------------------------------------------------------------
+
+### Average Grade per Student
+
+```{r}
+# Define the number of colors 
+nb.cols <- 20
+mycolors <- colorRampPalette(brewer.pal(9, "Reds"))(nb.cols)
+
+grades %>% group_by(Student_ID) %>% 
+  summarize(N = n(), Avg_Grade = mean(Grade)) %>%
+ggplot(aes(x=as.factor(Student_ID), y= Avg_Grade, fill = as.factor(Student_ID))) + 
+    geom_bar(position="dodge", stat="identity") +
+  labs(x="Student ID", y= "Average Grade") + 
+    coord_flip() + 
+  scale_fill_manual(values = mycolors) +
+  theme(legend.position = "none") 
+
+
+```
+
+### Grade by Gender
+
+```{r}
+left_join(grades,students) %>%
+  group_by(Gender,Year) %>%
+  summarise(AvgGrade = mean(Grade),) %>%
+  ggplot(aes(x=Year,y=AvgGrade,fill=Gender)) +
+  geom_bar(position = "dodge",stat ="identity") +
+  scale_fill_brewer(palette="Reds") +
+  labs(x="")
+
+```
+
+### Grade by Nationality
+
+```{r}
+nb.cols <- 20
+mycolors <- colorRampPalette(brewer.pal(9, "Reds"))(nb.cols)
+left_join(grades, students) %>%
+ group_by(Country) %>% 
+  summarize(N = n(), Avg_Grade = mean(Grade)) %>%
+ggplot(aes(x= Country, y= Avg_Grade, fill = as.factor(Country))) + 
+    geom_bar(position="dodge", stat="identity") +
+  labs(x="Country", y= "Average Grade") + 
+  scale_y_continuous(n.breaks = 8) +
+coord_flip() + 
+  scale_fill_manual(values = mycolors) +
+  theme(legend.position = "none")
+
+```
+
+Students
+=====================================  
+
+Row {data-height=100}
+-----------------------------------------------------------------------
+
+### Avg Age of Students
+
+```{r}
+  
+
+  AvgAge <- students %>%
+    summarise(avg = mean(Age))
+
+  AvgAge <- c(AvgAge)
+
+  valueBox(value = AvgAge, color = "red")
+```
+
+### Number of EU Students
+
+```{r}
+  NumEU <- students %>%
+    filter(Nationality == "EU") %>%
+    summarise(n())
+
+  valueBox(value = NumEU, color = "red")
+```
+
+### Number of Non-EU Students
+
+```{r}
+NumNonEU <- students %>%
+    filter(Nationality == "NONEU") %>%
+    summarise(n())
+
+  valueBox(value = NumNonEU, color = "red")
+```
+
+Row {data-height=300}
+-----------------------------------------------------------------------
+
+### Students Gender
+
+
+```{r}
+students %>% group_by(Gender) %>% summarise(N= n()) %>%
+  ggplot(aes(x="", y=N, fill=Gender)) +
+  geom_bar(stat="identity", width=1, color="white") +
+  geom_text(aes(label = N), position = position_stack(vjust = 0.5)) +
+  coord_polar("y", start=0) +
+  scale_fill_brewer(palette="Reds") +
+  theme_void()
+```
+
+### Student Admission by Year/Term
+
+
+```{r}
+students %>%
+  group_by(Admission.Year,Admission.Month) %>%
+  summarise(Count01 = n()) %>%
+  ggplot(aes(x = Admission.Year,y=Count01,fill=Admission.Month)) +
+  geom_bar(position = "dodge",stat ="identity", width = 1) +
+  labs(y="# of Admissions") +
+  scale_fill_brewer(palette="Reds") +
+  labs(x="")
+  
+```
+
+Row {data-height=300}
+-----------------------------------------------------------------------
+
+### Students Nationality
+
+```{r}
+students %>% group_by(Nationality) %>% summarise(N= n()) %>%
+  ggplot(aes(x="", y=N, fill=Nationality)) +
+  geom_bar(stat="identity", width=1, color="white") +
+  geom_text(aes(label = N), position = position_stack(vjust = 0.5)) +
+  scale_fill_brewer(palette="Reds") +
+  theme_void()
+
+
+```
+
+### Students Country
+
+```{r}
+# Define the number of colors 
+nb.cols <- 20
+mycolors <- colorRampPalette(brewer.pal(9, "Reds"))(nb.cols)
+
+students %>% group_by(Country) %>% summarise(N= n()) %>%
+  ggplot(aes(x="", y=N, fill=Country)) +
+  geom_bar(stat="identity", width=1) +
+  geom_text(aes(label = N), position = position_stack(vjust = 0.5)) +
+  coord_polar("y", start=0) +
+  scale_fill_manual(values = mycolors) +
+  theme_void()
+
+
+```

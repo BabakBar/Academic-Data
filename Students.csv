@@ -1,0 +1,21 @@
+﻿Student_ID;Full Name;Age;Gender;Country;Nationality;Admission Month;Admission Year
+12345;Student1;22;Male;Greece;EU;September;2018
+12346;Student2;25;Male;Argentina;NONEU;September;2018
+12347;Student3;21;Male;Spain;EU;September;2018
+12348;Student4;26;Female;Bulgaria;EU;September;2018
+12349;Student5;30;Male;Germany;EU;September;2019
+12341;Student6;28;Female;Ecuador;NONEU;February;2019
+12342;Student7;29;Female;Ecuador;NONEU;February;2019
+12345;Student8;24;Female;Ecuador;NONEU;February;2019
+12365;Student9;27;Male;Ecuador;NONEU;September;2019
+12340;Student10;23;Male;Spain;EU;September;2019
+12356;Student11;22;Female;China;NONEU;September;2019
+12389;Student12;26;Male;Gana;NONEU;September;2019
+12359;Student13;33;Male;Italy;EU;September;2019
+12445;Student14;25;Male;England;EU;September;2019
+12778;Student15;24;Male;France;EU;September;2020
+12498;Student16;26;Male;Ecuador;NONEU;September;2020
+12456;Student17;28;Male;Spain;EU;September;2020
+12458;Student18;25;Female;India;NONEU;September;2020
+14489;Student19;39;Male;Spain;EU;September;2020
+16698;Student20;30;Female;Spain;EU;February;2020
